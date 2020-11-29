@@ -1,0 +1,216 @@
+openapi: 3.0.3
+info:
+  version: 1.0.0
+  title: qr store  API
+  description: This is an API for qr store project
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/compitek.net/qrstore/1.0.0
+  - url: 'https://qrstore.compitek.net/v1'
+  - url: 'http://localhost:8081/v1'
+tags:
+  - name: suppliers
+    description: Operations availabled only for suppliers
+  - name: customers
+    description: Operations availabled only for customers
+paths:
+  /qr/{uuid}:
+    get:
+      tags:
+        - customers
+      summary: searches a qr by uuid
+      operationId: searchQr
+      description: |
+        By passing in the appropriate options, you can search for
+        available qr code
+      parameters:
+        - in: path
+          name: uuid
+          description: uuid to find
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'd290f1ee-6c54-4b01-90e6-d701748f0851'
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrItem'
+        '400':
+          description: 'Bad input parameter'
+        '500':
+          description: 'Internal server error'
+        '503':
+          description: 'Service unavailable'
+  /qr:
+    post:
+      tags:
+        - suppliers
+      summary: searches a qr objects (for suppliers)
+      operationId: searchQrs
+      description: |
+        By passing in the appropriate options, you can search for
+        available qr code
+      parameters:
+        - in: query
+          name: basepath
+          schema:
+            type: string
+            maxLength: 256
+            format: url
+            example: webpage.com
+        - in: query
+          name: namespace
+          schema:
+            type: string
+            maximum: 256
+            pattern: "^([a-z0-9]+/)*$"
+            description: optional prefix
+            example: goods/wear/socks/
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QrItem'
+        '400':
+          description: 'Bad input parameter, usually when submitting invalid base path or namespace'
+        '500':
+          description: 'Internal server error'
+        '503':
+          description: 'Service unavailable'
+  /qr/generate:
+    post:
+      tags:
+        - suppliers
+      summary: generate a new qr item
+      operationId: generateQR
+      description: Generates a new qr item
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateQrRequest'
+      responses:
+        '201':
+          description: 'Item created'
+        '400':
+          description: 'Bad input parameter'
+        '500':
+          description: 'Internal server error'
+        '503':
+          description: 'Service unavailable'
+  /qr/report/common:
+    get:
+      tags:
+        - suppliers
+      summary: get a report about qr
+      operationId: generate the report
+      description: get the data about quantity of qr codes
+      responses:
+        '200':
+          description: 'common report'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommonReportRow'
+        '400':
+          description: 'Bad input parameter'
+        '500':
+          description: 'Internal server error'
+        '503':
+          description: 'Service unavailable'
+components:
+  schemas:
+    QrItem:
+      type: object
+      required:
+        - uuid
+        - namespace
+        - releaseDate
+        - picture
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: 'd290f1ee-6c54-4b01-90e6-d701748f0851'
+        basepath:
+          type: string
+          format: url
+          maxLength: 256
+          example: webpage.com
+        namespace:
+          type: string
+          maxLength: 256
+          pattern: "^/([a-z0-9]+/)*$"
+          description: optional prefix
+          example: /goods/wear/socks/
+        data:
+          type: string
+          example: |
+            {
+            'name': 'red socks',
+            'description':'soft pleasant socks for men and women;',
+            'image': '/images/pic2231.jpg',
+            'html':'<div><h1>red socks is good</h1><img src='${1}'></div>'
+            }
+        releaseDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        picture:
+          type: string
+          format: binary
+          description: qr code picture
+    GenerateQrRequest:
+      type: object
+      properties:
+        basepath:
+          type: string
+          format: url
+          maxLength: 256
+          example: webpage.com
+        namespace:
+          type: string
+          maxLength: 256
+          pattern: "^([a-z0-9]+/)*$"
+          description: optional prefix
+          example: goods/wear/socks/
+        description:
+          type: string
+          example: |
+            {
+            'name': 'red socks',
+            'description':'soft pleasant socks for men and women;',
+            'image': '/images/pic2231.jpg',
+            'html':'<div><h1>red socks is good</h1><img src='${1}'></div>'
+            }
+    CommonReportRow:
+      required:
+        - count
+        - namespace
+      type: object
+      properties:
+        basepath:
+          type: string
+          maxLength: 256
+          format: url
+          example: webpage.com
+        namespace:
+          type: string
+          maxLength: 256
+          pattern: "^([a-z0-9]+/)*$"
+          description: optional prefix
+          example: goods/wear/socks/
+        count:
+          type: integer
+          example: 5
